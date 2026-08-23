@@ -470,6 +470,7 @@
     ];
 
     let lastProcessedPlane = "";
+    let lastHadTone = false;
 
     function currentPlane() {
       return PLANES.find((item) => item.id === aircraftEl.value) || PLANES[5];
@@ -861,6 +862,18 @@
       noiseFilter.connect(noiseGain);
       noiseGain.connect(lowpass);
 
+      lastHadTone = Math.random() < 0.15;
+      if (lastHadTone) {
+        const tone = ctx.createOscillator();
+        tone.type = "sine";
+        tone.frequency.value = Math.min(3480, ac.lp * 0.9);
+        const toneGain = ctx.createGain();
+        toneGain.gain.value = 0.02;
+        tone.connect(toneGain);
+        toneGain.connect(lowpass);
+        tone.start();
+      }
+
       source.start();
       noise.start();
 
@@ -972,7 +985,10 @@
         };
         await previewAudio.play();
         setStatus("Preview");
-        setNote("Playing the " + currentPlane().name + " cabin mix. When it ends, the handset goes back on the stand.");
+        setNote(
+          "Playing the " + currentPlane().name + " cabin mix. When it ends, the handset goes back on the stand." +
+          (lastHadTone ? " A faint high tone is in this take." : "")
+        );
       } catch (err) {
         setOff(previewBtn, false);
         setStatus("Recorded");
@@ -984,6 +1000,7 @@
       setOff(exportBtn, true);
       try {
         const blob = await getProcessedBlob();
+        playHangup();
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
@@ -993,7 +1010,10 @@
         link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1500);
         setStatus("Exported");
-        setNote("Saved a " + currentPlane().name + " PA mix, including that type’s grain and any dead-spot skips.");
+        setNote(
+          "Saved a " + currentPlane().name + " PA mix. Handset back on the hook." +
+          (lastHadTone ? " A faint high tone crept into this take." : "")
+        );
       } catch (err) {
         setNote("Could not export the announcement.", true);
       } finally {
