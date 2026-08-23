@@ -158,6 +158,35 @@
     }
 
     .note.error { color: #e08a7a; }
+
+    .ac-block { margin-bottom: 12px; }
+
+    .ac-block label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--mute);
+      margin-bottom: 6px;
+    }
+
+    #aircraft {
+      width: 100%;
+      height: 40px;
+      background: var(--inset);
+      color: var(--cream);
+      border: 1px solid #4a4338;
+      font: 600 13px inherit;
+      letter-spacing: 0.04em;
+      padding: 0 8px;
+    }
+
+    .ac-meta {
+      margin: 6px 2px 0;
+      color: var(--amber-dim);
+      font-size: 11px;
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
@@ -165,6 +194,12 @@
     <div class="plate">
       <strong>just a flight sim</strong>
       <span>Crew Station</span>
+    </div>
+
+    <div class="ac-block">
+      <label for="aircraft">Aircraft</label>
+      <select id="aircraft"></select>
+      <p id="ac-meta" class="ac-meta"></p>
     </div>
 
     <section class="screen">
@@ -184,7 +219,7 @@
       <button id="export" class="ghost is-off" type="button" aria-disabled="true">Export PA</button>
     </div>
 
-    <p id="note" class="note">Press the button. The chime plays and recording starts. Export applies a light cabin-speaker grain to your voice.</p>
+    <p id="note" class="note">Pick an aircraft, then press the button. The chime plays and recording starts. Export uses that type’s cabin PA, including grain and occasional dead-spot skips.</p>
   </main>
 
   <script>
@@ -198,6 +233,8 @@
     const timerEl = document.getElementById("timer");
     const meterFill = document.getElementById("meter-fill");
     const noteEl = document.getElementById("note");
+    const aircraftEl = document.getElementById("aircraft");
+    const acMetaEl = document.getElementById("ac-meta");
 
     let audioCtx = null;
     let chimeBuffer = null;
@@ -212,6 +249,253 @@
     let analyser = null;
     let meterSource = null;
     let recording = false;
+
+    function plane(id, maker, name, extra) {
+      return Object.assign({
+        id: id,
+        maker: maker,
+        name: name,
+        hp: 340,
+        lp: 3200,
+        hpQ: 0.7,
+        lpQ: 0.85,
+        presence: 1750,
+        presenceGain: 3.2,
+        presenceQ: 0.85,
+        drive: 9,
+        grainSteps: 220,
+        hiss: 0.007,
+        clip: 0.92,
+        noise: 0.016,
+        noiseFreq: 2200,
+        gain: 1.0,
+        dingGain: 0.95,
+        compThresh: -22,
+        compRatio: 5.5,
+        delay: 0.018,
+        reverb: 0.06,
+        skipChance: 0.38,
+        skipMin: 0.06,
+        skipMax: 0.28,
+        skipCount: [0, 2],
+        blurb: "Speech-band cabin PA."
+      }, extra);
+    }
+
+    const PLANES = [
+      plane("dc-3", "Douglas", "DC-3", {
+        hp: 560, lp: 1650, hpQ: 0.95, lpQ: 1.15,
+        presence: 1220, presenceGain: 6.8, presenceQ: 1.7,
+        drive: 34, grainSteps: 26, hiss: 0.062, clip: 0.68,
+        noise: 0.095, noiseFreq: 1450, gain: 0.15, dingGain: 0.26,
+        compThresh: -15, compRatio: 11, delay: 0.011, reverb: 0.025,
+        skipChance: 0.96, skipMin: 0.14, skipMax: 0.5, skipCount: [2, 4],
+        blurb: "1936 carbon-mic interphone into a weak horn speaker. Lots of grain, almost no level, dropouts in the wiring."
+      }),
+      plane("707-320", "Boeing", "707-320", {
+        hp: 400, lp: 2550, presence: 1900, presenceGain: 4.6, drive: 18,
+        grainSteps: 88, hiss: 0.018, noise: 0.03, gain: 0.82, dingGain: 0.8,
+        delay: 0.034, reverb: 0.16, skipChance: 0.62, skipMax: 0.42, skipCount: [1, 3],
+        blurb: "Early jet analog amp. Nasal, narrow, and a little shaky on long runs."
+      }),
+      plane("727-200", "Boeing", "727-200", {
+        hp: 390, lp: 2680, presence: 1850, presenceGain: 4.4, drive: 16,
+        grainSteps: 96, hiss: 0.016, noise: 0.028, gain: 0.86,
+        delay: 0.03, reverb: 0.13, skipChance: 0.55, skipMax: 0.38, skipCount: [1, 2],
+        blurb: "Trijet analog PA. Mid honk, limited top end, occasional amplifier sag."
+      }),
+      plane("737-200", "Boeing", "737-200", {
+        hp: 380, lp: 2750, presence: 2000, presenceGain: 4.8, presenceQ: 1.1,
+        drive: 17, grainSteps: 84, hiss: 0.017, noise: 0.027, gain: 0.88,
+        delay: 0.02, reverb: 0.07, skipChance: 0.52, skipMax: 0.36, skipCount: [1, 2],
+        blurb: "JT8D-era 5-inch speakers. Harsh and telephone-like."
+      }),
+      plane("737-300", "Boeing", "737-300", {
+        hp: 360, lp: 2950, presence: 1880, presenceGain: 4.0, drive: 13,
+        grainSteps: 140, hiss: 0.011, noise: 0.02, gain: 0.94,
+        skipChance: 0.42, skipMax: 0.3,
+        blurb: "Classic 737 analog PA. Cleaner than the -200, still band-limited."
+      }),
+      plane("737-800", "Boeing", "737-800", {
+        hp: 350, lp: 3100, presence: 1820, presenceGain: 3.6, drive: 11,
+        grainSteps: 190, hiss: 0.008, noise: 0.017, gain: 1.02, dingGain: 0.96,
+        skipChance: 0.36, skipMax: 0.26,
+        blurb: "NG PA amp, about 5-inch 7 W PSU speakers. Gain steps up with engines; still speech-band."
+      }),
+      plane("737-max8", "Boeing", "737 MAX 8", {
+        hp: 320, lp: 3600, presence: 1700, presenceGain: 2.8, drive: 7,
+        grainSteps: 260, hiss: 0.005, noise: 0.012, gain: 1.04,
+        skipChance: 0.24, skipMax: 0.18, skipCount: [0, 1],
+        blurb: "Same small speakers, newer processing. A bit cleaner, still not hi-fi."
+      }),
+      plane("747-200", "Boeing", "747-200", {
+        hp: 370, lp: 2700, presence: 1600, presenceGain: 3.8, drive: 15,
+        grainSteps: 100, hiss: 0.015, noise: 0.026, gain: 0.9,
+        delay: 0.046, reverb: 0.22, skipChance: 0.58, skipMax: 0.4, skipCount: [1, 3],
+        blurb: "Analog jumbo. Long cabin, more slap, more dead spots under the bins."
+      }),
+      plane("747-400", "Boeing", "747-400", {
+        hp: 340, lp: 3050, presence: 1680, presenceGain: 3.4, drive: 11,
+        grainSteps: 170, hiss: 0.009, noise: 0.018, gain: 0.98,
+        delay: 0.044, reverb: 0.2, skipChance: 0.4, skipMax: 0.3,
+        blurb: "Later 747 amp, still a long tube of ceiling speakers."
+      }),
+      plane("747-8", "Boeing", "747-8", {
+        hp: 300, lp: 3800, presence: 1650, presenceGain: 2.6, drive: 7,
+        grainSteps: 280, hiss: 0.0045, noise: 0.011, gain: 1.05,
+        delay: 0.048, reverb: 0.21, skipChance: 0.28, skipMax: 0.2, skipCount: [0, 1],
+        blurb: "Modern jumbo electronics, huge cabin. Cleaner chain, more room sound."
+      }),
+      plane("757-200", "Boeing", "757-200", {
+        hp: 345, lp: 3150, presence: 1950, presenceGain: 4.1, drive: 12,
+        grainSteps: 175, hiss: 0.009, noise: 0.018, gain: 1.06,
+        delay: 0.028, reverb: 0.1, skipChance: 0.34, skipMax: 0.24,
+        blurb: "Loud, a little piercing. Narrow-body Boeing mid honk."
+      }),
+      plane("767-300", "Boeing", "767-300", {
+        hp: 350, lp: 3000, presence: 1720, presenceGain: 3.5, drive: 12,
+        grainSteps: 165, hiss: 0.01, noise: 0.019, gain: 0.97,
+        delay: 0.038, reverb: 0.15, skipChance: 0.4, skipMax: 0.3,
+        blurb: "1980s widebody analog/digital hybrid. Boxy, some aisle fade."
+      }),
+      plane("777-200", "Boeing", "777-200", {
+        hp: 310, lp: 3550, presence: 1680, presenceGain: 2.9, drive: 8,
+        grainSteps: 250, hiss: 0.0055, noise: 0.013, gain: 1.03,
+        delay: 0.04, reverb: 0.17, skipChance: 0.26, skipMax: 0.2, skipCount: [0, 1],
+        blurb: "Early digital widebody. Fuller than a 737, still PSU cones."
+      }),
+      plane("777-300er", "Boeing", "777-300ER", {
+        hp: 305, lp: 3650, presence: 1660, presenceGain: 2.7, drive: 7,
+        grainSteps: 270, hiss: 0.005, noise: 0.012, gain: 1.04,
+        delay: 0.042, reverb: 0.18, skipChance: 0.25, skipMax: 0.2, skipCount: [0, 1],
+        blurb: "Longer 777 cabin. Same digital chain, a bit more echo aft."
+      }),
+      plane("787-8", "Boeing", "787-8", {
+        hp: 270, lp: 4300, presence: 1550, presenceGain: 2.1, drive: 5,
+        grainSteps: 340, hiss: 0.003, noise: 0.008, gain: 0.92,
+        delay: 0.036, reverb: 0.12, skipChance: 0.16, skipMax: 0.14, skipCount: [0, 1],
+        blurb: "DSP PA in a quieter composite cabin. Cleaner and less shouty."
+      }),
+      plane("787-9", "Boeing", "787-9", {
+        hp: 265, lp: 4400, presence: 1540, presenceGain: 2.0, drive: 5,
+        grainSteps: 350, hiss: 0.0028, noise: 0.0075, gain: 0.93,
+        delay: 0.038, reverb: 0.13, skipChance: 0.15, skipMax: 0.14, skipCount: [0, 1],
+        blurb: "Same 787 system, slightly longer cabin."
+      }),
+      plane("a220-300", "Airbus", "A220-300", {
+        hp: 300, lp: 3900, presence: 1600, presenceGain: 2.5, drive: 6,
+        grainSteps: 300, hiss: 0.004, noise: 0.01, gain: 0.96,
+        delay: 0.02, reverb: 0.07, skipChance: 0.2, skipMax: 0.16, skipCount: [0, 1],
+        blurb: "Small CSeries cabin, relatively even coverage for a regional jet."
+      }),
+      plane("a300-600", "Airbus", "A300-600", {
+        hp: 380, lp: 2800, presence: 1580, presenceGain: 3.7, drive: 14,
+        grainSteps: 110, hiss: 0.014, noise: 0.024, gain: 0.88,
+        delay: 0.04, reverb: 0.16, skipChance: 0.5, skipMax: 0.36, skipCount: [1, 2],
+        blurb: "Early widebody Airbus. Analog character, uneven rows."
+      }),
+      plane("a310", "Airbus", "A310", {
+        hp: 375, lp: 2850, presence: 1620, presenceGain: 3.6, drive: 13,
+        grainSteps: 120, hiss: 0.013, noise: 0.023, gain: 0.9,
+        delay: 0.036, reverb: 0.14, skipChance: 0.48, skipMax: 0.34,
+        blurb: "Shorter A300 cousin. Same generation PA, still grainy."
+      }),
+      plane("a318", "Airbus", "A318", {
+        hp: 355, lp: 3300, presence: 1750, presenceGain: 3.3, drive: 9,
+        grainSteps: 210, hiss: 0.0075, noise: 0.016, gain: 1.0,
+        delay: 0.016, reverb: 0.05, skipChance: 0.3, skipMax: 0.22,
+        blurb: "Short CIDS cabin. A little boxy, not much echo."
+      }),
+      plane("a319", "Airbus", "A319", {
+        hp: 345, lp: 3350, presence: 1680, presenceGain: 3.1, drive: 8,
+        grainSteps: 230, hiss: 0.0065, noise: 0.015, gain: 1.01,
+        delay: 0.02, reverb: 0.07, skipChance: 0.28, skipMax: 0.22,
+        blurb: "A320-family CIDS. Digital, consistent, still small PSU cones."
+      }),
+      plane("a320", "Airbus", "A320", {
+        hp: 340, lp: 3400, presence: 1650, presenceGain: 3.0, drive: 8,
+        grainSteps: 240, hiss: 0.006, noise: 0.014, gain: 1.02,
+        delay: 0.022, reverb: 0.08, skipChance: 0.3, skipMax: 0.24,
+        blurb: "Classic CIDS: digital feed, per-speaker amps, speech-band EQ."
+      }),
+      plane("a321", "Airbus", "A321", {
+        hp: 340, lp: 3380, presence: 1640, presenceGain: 3.0, drive: 8,
+        grainSteps: 235, hiss: 0.0062, noise: 0.0145, gain: 1.01,
+        delay: 0.03, reverb: 0.11, skipChance: 0.34, skipMax: 0.26,
+        blurb: "Same CIDS as the A320, longer tube, more row-to-row fade."
+      }),
+      plane("a330-200", "Airbus", "A330-200", {
+        hp: 325, lp: 3500, presence: 1600, presenceGain: 2.8, drive: 8,
+        grainSteps: 245, hiss: 0.006, noise: 0.014, gain: 1.0,
+        delay: 0.04, reverb: 0.17, skipChance: 0.32, skipMax: 0.24,
+        blurb: "Widebody CIDS. Warmer than a Boeing 767, some cabin slap."
+      }),
+      plane("a330-300", "Airbus", "A330-300", {
+        hp: 325, lp: 3480, presence: 1590, presenceGain: 2.8, drive: 8,
+        grainSteps: 240, hiss: 0.0062, noise: 0.0145, gain: 0.99,
+        delay: 0.043, reverb: 0.19, skipChance: 0.34, skipMax: 0.26,
+        blurb: "Longer A330. Same directors, more distance to the tail speakers."
+      }),
+      plane("a340-300", "Airbus", "A340-300", {
+        hp: 350, lp: 3100, presence: 1550, presenceGain: 3.4, drive: 11,
+        grainSteps: 160, hiss: 0.01, noise: 0.02, gain: 0.94,
+        delay: 0.044, reverb: 0.18, skipChance: 0.44, skipMax: 0.32, skipCount: [1, 2],
+        blurb: "Older four-engine widebody. A bit hollow, more analog leftovers."
+      }),
+      plane("a340-600", "Airbus", "A340-600", {
+        hp: 345, lp: 3150, presence: 1540, presenceGain: 3.3, drive: 10,
+        grainSteps: 155, hiss: 0.0105, noise: 0.02, gain: 0.93,
+        delay: 0.05, reverb: 0.22, skipChance: 0.46, skipMax: 0.34, skipCount: [1, 2],
+        blurb: "Very long cabin. Coverage gaps and a trailing echo are common."
+      }),
+      plane("a350-900", "Airbus", "A350-900", {
+        hp: 260, lp: 4500, presence: 1500, presenceGain: 2.0, drive: 4.5,
+        grainSteps: 360, hiss: 0.0026, noise: 0.007, gain: 0.94,
+        delay: 0.037, reverb: 0.13, skipChance: 0.14, skipMax: 0.13, skipCount: [0, 1],
+        blurb: "Modern DSP CIDS in a quiet cabin. Clearest Airbus here."
+      }),
+      plane("a350-1000", "Airbus", "A350-1000", {
+        hp: 255, lp: 4550, presence: 1490, presenceGain: 1.9, drive: 4.5,
+        grainSteps: 365, hiss: 0.0025, noise: 0.007, gain: 0.94,
+        delay: 0.04, reverb: 0.145, skipChance: 0.15, skipMax: 0.14, skipCount: [0, 1],
+        blurb: "Same A350 chain, longer cabin."
+      }),
+      plane("a380-800", "Airbus", "A380-800", {
+        hp: 275, lp: 4200, presence: 1480, presenceGain: 2.2, drive: 5,
+        grainSteps: 330, hiss: 0.0032, noise: 0.0085, gain: 0.97,
+        delay: 0.055, reverb: 0.26, skipChance: 0.3, skipMax: 0.22, skipCount: [0, 2],
+        blurb: "Two decks, long paths. Clean electronics, the most hall-like cabin."
+      })
+    ];
+
+    let lastProcessedPlane = "";
+
+    function currentPlane() {
+      return PLANES.find((item) => item.id === aircraftEl.value) || PLANES[5];
+    }
+
+    function fillAircraftSelect() {
+      const groups = {};
+      PLANES.forEach((item) => {
+        if (!groups[item.maker]) {
+          const og = document.createElement("optgroup");
+          og.label = item.maker;
+          aircraftEl.appendChild(og);
+          groups[item.maker] = og;
+        }
+        const opt = document.createElement("option");
+        opt.value = item.id;
+        opt.textContent = item.name;
+        groups[item.maker].appendChild(opt);
+      });
+      aircraftEl.value = "737-800";
+      updateAircraftMeta();
+    }
+
+    function updateAircraftMeta() {
+      const ac = currentPlane();
+      acMetaEl.textContent = ac.blurb;
+    }
 
 
     function setOff(btn, off) {
@@ -339,6 +623,7 @@
       recordedChunks = [];
       recordedBlob = null;
       processedBlob = null;
+      lastProcessedPlane = "";
       setOff(previewBtn, true);
       setOff(exportBtn, true);
       setOff(talkBtn, true);
@@ -379,7 +664,7 @@
         stopMeter();
         stopTimer();
         setStatus("Recorded");
-        setNote("Preview the cabin mix, or export a WAV with the PA grain applied.");
+        setNote("Recorded. Preview or export through the selected " + currentPlane().name + " PA.");
       };
 
       try {
@@ -432,16 +717,41 @@
       return buffer;
     }
 
-    function addGrain(channel) {
-      const steps = 220;
+    function addGrain(channel, ac) {
+      const steps = ac.grainSteps;
+      const clip = ac.clip;
       for (let i = 0; i < channel.length; i++) {
-        const hiss = (Math.random() * 2 - 1) * 0.007;
+        const hiss = (Math.random() * 2 - 1) * ac.hiss;
         let sample = channel[i] + hiss;
         sample = Math.round(sample * steps) / steps;
-        if (sample > 0.92) sample = 0.92;
-        if (sample < -0.92) sample = -0.92;
+        if (sample > clip) sample = clip;
+        if (sample < -clip) sample = -clip;
         channel[i] = sample;
       }
+    }
+
+    function applyDeadSpots(channel, sampleRate, ac) {
+      if (Math.random() > ac.skipChance) return 0;
+      const lo = ac.skipCount[0];
+      const hi = ac.skipCount[1];
+      const count = lo + Math.floor(Math.random() * (hi - lo + 1));
+      if (count <= 0) return 0;
+      const fade = Math.max(32, Math.round(sampleRate * 0.005));
+      let applied = 0;
+      for (let n = 0; n < count; n++) {
+        const dur = ac.skipMin + Math.random() * (ac.skipMax - ac.skipMin);
+        const len = Math.max(fade * 2, Math.round(dur * sampleRate));
+        if (len >= channel.length - fade) continue;
+        const start = Math.floor(Math.random() * (channel.length - len));
+        for (let i = 0; i < len; i++) {
+          let env = 0;
+          if (i < fade) env = 1 - i / fade;
+          else if (i > len - fade) env = (len - i) / fade;
+          channel[start + i] *= env * env;
+        }
+        applied += 1;
+      }
+      return applied;
     }
 
     async function decodeBlob(blob) {
@@ -455,6 +765,7 @@
     }
 
     async function applyPaTreatment(voiceBuffer) {
+      const ac = currentPlane();
       const sampleRate = 48000;
       const length = Math.ceil(bufferDuration(voiceBuffer) * sampleRate);
       const ctx = new OfflineAudioContext(1, Math.max(1, length), sampleRate);
@@ -464,42 +775,50 @@
 
       const highpass = ctx.createBiquadFilter();
       highpass.type = "highpass";
-      highpass.frequency.value = 360;
-      highpass.Q.value = 0.7;
+      highpass.frequency.value = ac.hp;
+      highpass.Q.value = ac.hpQ;
 
       const presence = ctx.createBiquadFilter();
       presence.type = "peaking";
-      presence.frequency.value = 1750;
-      presence.Q.value = 0.85;
-      presence.gain.value = 3.2;
+      presence.frequency.value = ac.presence;
+      presence.Q.value = ac.presenceQ;
+      presence.gain.value = ac.presenceGain;
 
       const shaper = ctx.createWaveShaper();
-      shaper.curve = distortionCurve(9);
+      shaper.curve = distortionCurve(ac.drive);
       shaper.oversample = "2x";
 
       const lowpass = ctx.createBiquadFilter();
       lowpass.type = "lowpass";
-      lowpass.frequency.value = 3100;
-      lowpass.Q.value = 0.85;
+      lowpass.frequency.value = ac.lp;
+      lowpass.Q.value = ac.lpQ;
 
       const compressor = ctx.createDynamicsCompressor();
-      compressor.threshold.value = -22;
+      compressor.threshold.value = ac.compThresh;
       compressor.knee.value = 10;
-      compressor.ratio.value = 5.5;
+      compressor.ratio.value = ac.compRatio;
       compressor.attack.value = 0.004;
       compressor.release.value = 0.16;
 
+      const delay = ctx.createDelay(0.2);
+      delay.delayTime.value = ac.delay;
+      const delayGain = ctx.createGain();
+      delayGain.gain.value = ac.reverb;
+      const delayFilter = ctx.createBiquadFilter();
+      delayFilter.type = "lowpass";
+      delayFilter.frequency.value = Math.min(2400, ac.lp * 0.7);
+
       const voiceGain = ctx.createGain();
-      voiceGain.gain.value = 1.05;
+      voiceGain.gain.value = ac.gain;
 
       const noise = ctx.createBufferSource();
       noise.buffer = makeNoiseBuffer(ctx, Math.max(1, length));
       const noiseFilter = ctx.createBiquadFilter();
       noiseFilter.type = "bandpass";
-      noiseFilter.frequency.value = 2200;
+      noiseFilter.frequency.value = ac.noiseFreq;
       noiseFilter.Q.value = 0.6;
       const noiseGain = ctx.createGain();
-      noiseGain.gain.value = 0.016;
+      noiseGain.gain.value = ac.noise;
 
       source.connect(highpass);
       highpass.connect(presence);
@@ -509,6 +828,12 @@
       compressor.connect(voiceGain);
       voiceGain.connect(ctx.destination);
 
+      voiceGain.connect(delay);
+      delay.connect(delayFilter);
+      delayFilter.connect(delayGain);
+      delayGain.connect(ctx.destination);
+      delayGain.connect(delay);
+
       noise.connect(noiseFilter);
       noiseFilter.connect(noiseGain);
       noiseGain.connect(lowpass);
@@ -517,7 +842,9 @@
       noise.start();
 
       const rendered = await ctx.startRendering();
-      addGrain(rendered.getChannelData(0));
+      const channel = rendered.getChannelData(0);
+      addGrain(channel, ac);
+      applyDeadSpots(channel, sampleRate, ac);
       return rendered;
     }
 
@@ -534,7 +861,7 @@
       const dingSource = out.createBufferSource();
       dingSource.buffer = ding;
       const dingGain = out.createGain();
-      dingGain.gain.value = 0.95;
+      dingGain.gain.value = currentPlane().dingGain;
       dingSource.connect(dingGain);
       dingGain.connect(out.destination);
       dingSource.start(0);
@@ -580,12 +907,14 @@
     }
 
     async function getProcessedBlob() {
-      if (processedBlob) return processedBlob;
+      const planeId = currentPlane().id;
+      if (processedBlob && lastProcessedPlane === planeId) return processedBlob;
       if (!recordedBlob) throw new Error("No recording");
       setStatus("Processing");
       const voice = await decodeBlob(recordedBlob);
       const mixed = await assembleAnnouncement(voice);
       processedBlob = encodeWav(mixed);
+      lastProcessedPlane = planeId;
       return processedBlob;
     }
 
@@ -618,7 +947,7 @@
         };
         await previewAudio.play();
         setStatus("Preview");
-        setNote("Playing the exported PA mix: chime, then your grainy announcement.");
+        setNote("Playing the " + currentPlane().name + " cabin mix: chime, then the treated announcement.");
       } catch (err) {
         setOff(previewBtn, false);
         setStatus("Recorded");
@@ -633,13 +962,13 @@
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "pa-announcement-" + stamp() + ".wav";
+        link.download = "pa-" + currentPlane().id + "-" + stamp() + ".wav";
         document.body.appendChild(link);
         link.click();
         link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1500);
         setStatus("Exported");
-        setNote("Saved a WAV with the chime and a light PA grain on your voice.");
+        setNote("Saved a " + currentPlane().name + " PA mix, including that type’s grain and any dead-spot skips.");
       } catch (err) {
         setNote("Could not export the announcement.", true);
       } finally {
@@ -670,6 +999,15 @@
       }
       exportMix();
     });
+    aircraftEl.addEventListener("change", () => {
+      processedBlob = null;
+      lastProcessedPlane = "";
+      updateAircraftMeta();
+      if (recordedBlob) {
+        setNote("Aircraft set to " + currentPlane().name + ". Preview or export to hear this PA.");
+      }
+    });
+    fillAircraftSelect();
   </script>
 </body>
 </html>
