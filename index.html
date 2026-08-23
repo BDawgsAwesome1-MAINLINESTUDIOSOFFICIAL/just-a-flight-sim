@@ -713,6 +713,7 @@
       if (!mediaRecorder || mediaRecorder.state === "inactive") return;
       setOff(talkBtn, true);
       setStatus("Stopping");
+      playHangup();
       mediaRecorder.stop();
     }
 
@@ -967,11 +968,11 @@
           playHangup();
           setOff(previewBtn, false);
           setStatus("Recorded");
-          setNote("Preview ended.");
+          setNote("Handset back on the hook.");
         };
         await previewAudio.play();
         setStatus("Preview");
-        setNote("Playing the " + currentPlane().name + " cabin mix: chime, then the treated announcement.");
+        setNote("Playing the " + currentPlane().name + " cabin mix. When it ends, the handset goes back on the stand.");
       } catch (err) {
         setOff(previewBtn, false);
         setStatus("Recorded");
