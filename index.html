@@ -39,7 +39,7 @@
     }
 
     .frame {
-      width: min(460px, 100%);
+      width: min(500px, 100%);
       background: linear-gradient(180deg, #353028, var(--panel) 28%, #221e19);
       border: 1px solid var(--panel-edge);
       border-radius: 6px;
@@ -213,6 +213,73 @@
       background: var(--amber);
       border-color: var(--amber);
     }
+
+    .dossier {
+      margin-top: 10px;
+      padding: 10px 10px 9px;
+      background: var(--inset);
+      border: 1px solid #4a4338;
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--cream);
+    }
+
+    .dossier-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .dossier-k {
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--mute);
+      font-size: 10px;
+    }
+
+    .dossier-grade {
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .dossier-grade.bad { color: #e08a7a; }
+    .dossier-grade.poor { color: #d89a5a; }
+    .dossier-grade.fair { color: #c9b06a; }
+    .dossier-grade.okay { color: var(--amber); }
+    .dossier-grade.good { color: #8fbf7a; }
+
+    .dossier-grid {
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: 2px 8px;
+      margin: 0 0 7px;
+    }
+
+    .dossier-grid dt {
+      color: var(--mute);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 10px;
+    }
+
+    .dossier-grid dd {
+      margin: 0;
+    }
+
+    .dossier p {
+      margin: 0 0 5px;
+    }
+
+    .dossier p:last-child { margin-bottom: 0; }
+
+    .dossier b {
+      color: var(--amber-dim);
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
@@ -230,6 +297,7 @@
         <input id="force-tone" type="checkbox" />
         Force high PA tone
       </label>
+      <aside id="dossier" class="dossier" aria-live="polite"></aside>
     </div>
 
     <section class="screen">
@@ -266,6 +334,7 @@
     const noteEl = document.getElementById("note");
     const aircraftEl = document.getElementById("aircraft");
     const acMetaEl = document.getElementById("ac-meta");
+    const dossierEl = document.getElementById("dossier");
     const forceToneEl = document.getElementById("force-tone");
 
     let audioCtx = null;
@@ -500,6 +569,250 @@
       })
     ];
 
+
+    const DOSSIERS = {
+      "dc-3": {
+        year: "1936", body: "Narrow, unpressurized",
+        system: "Carbon-mic interphone into a later horn speaker",
+        grade: "Bad", key: "bad",
+        good: "You can tell a human is talking. That is about it.",
+        bad: "Almost no level against the radials. Extreme grain, horn-narrow band, wiring dropouts up to half a second. Loudspeakers were barely practical in that noise.",
+        more: "WWII-era ships used headphones first. A cabin PA on a DC-3 is a retrofit: pencil-tube or carbon chain, one weak horn, no automatic gain, no zone amps."
+      },
+      "707-320": {
+        year: "1959", body: "Narrow jet, loud JT3D/JT4 cruise",
+        system: "Early analog PA amplifier, 28 V",
+        grade: "Poor", key: "poor",
+        good: "Speech is intelligible in the midrange if the crew leans in.",
+        bad: "Nasal, narrow, amp sag on long reads. Cabin noise eats the edges. Skips show up on tired wiring.",
+        more: "First-generation jet PA. Designed only to beat 70–80 dB cruise roar, not to sound like a room."
+      },
+      "727-200": {
+        year: "1967", body: "Narrow trijet",
+        system: "Analog PA amp, ceiling cones",
+        grade: "Poor", key: "poor",
+        good: "A bit more mid punch than a 707. Crew can cut through the aft engines.",
+        bad: "Honky mids, chopped top end, occasional amplifier sag. Still analog and fussy.",
+        more: "Same design brief as other 1960s Boeings: one amp, many cheap speakers, intelligibility over fidelity."
+      },
+      "737-200": {
+        year: "1968", body: "Short narrowbody, JT8D",
+        system: "Analog PA, ~5-inch 7 W PSU speakers",
+        grade: "Poor", key: "poor",
+        good: "Close seats, so level is usually enough.",
+        bad: "Harsh, telephone-like, peaky around 2 kHz. Sounds like someone talking through a tin can.",
+        more: "Classic 737 PA amp on the battery bus. Gain steps up when engines run. The speakers never got better than speech-band cones."
+      },
+      "737-300": {
+        year: "1984", body: "Classic 737, CFM56",
+        system: "Improved analog PA, same small cones",
+        grade: "Fair", key: "fair",
+        good: "Cleaner than the -200. Less grit, more consistent gain.",
+        bad: "Still band-limited. No per-speaker DSP. A little boxy.",
+        more: "Classic-era amp cleanup, not a new architecture. You hear a 737, just a tidier one."
+      },
+      "737-800": {
+        year: "1998", body: "NG narrowbody",
+        system: "NG PA amp + REU, 5-inch 7 W PSU speakers",
+        grade: "Fair", key: "fair",
+        good: "Predictable level. Engine-on +6 dB gain. Most people understand it.",
+        bad: "Still a speech-band cone in the PSU. Nasal Boeing mid honk. Overhead bins create small dead spots.",
+        more: "The default modern 737 sound. Pilot priority, then attendants, then recorded PA. Not hi-fi on purpose."
+      },
+      "737-max8": {
+        year: "2017", body: "MAX narrowbody",
+        system: "Same speaker family, newer processing",
+        grade: "Okay", key: "okay",
+        good: "A bit cleaner and less shouty than NG. Fewer dropouts.",
+        bad: "Same small cones. You cannot process your way out of a 3–4 inch driver.",
+        more: "Electronics moved on; the cabin speaker did not. Sounds like a 737 that had a software update."
+      },
+      "747-200": {
+        year: "1971", body: "Long analog jumbo",
+        system: "Analog jumbo PA, ceiling/PSU cones",
+        grade: "Poor", key: "poor",
+        good: "You hear it in the mid cabin if you sit under a speaker.",
+        bad: "Long tube, lots of slap, bins kill 2 kHz. Dead spots and dropouts are common. Grainy analog chain.",
+        more: "Widebody coverage is the hard problem. Early 747s used conventional cones with uneven SPL row to row."
+      },
+      "747-400": {
+        year: "1989", body: "Long jumbo",
+        system: "Later analog/digital hybrid amp",
+        grade: "Fair", key: "fair",
+        good: "More even than a -200. Better amp, still understandable aft.",
+        bad: "The cabin is still a hallway of speakers. Echo and bin shadows remain.",
+        more: "Same layout problem, better electronics. Intelligibility improved; hi-fi did not arrive."
+      },
+      "747-8": {
+        year: "2011", body: "Stretched jumbo",
+        system: "Modern digital PA, huge cabin",
+        grade: "Okay", key: "okay",
+        good: "Clean chain. Speech is clear when you are near a speaker.",
+        bad: "The room is enormous. You get hall-like slap and some coverage gaps.",
+        more: "Best 747 electronics, worst 747 geometry. The mix is clean and a little cathedral."
+      },
+      "757-200": {
+        year: "1983", body: "Long narrowbody",
+        system: "1980s Boeing analog PA",
+        grade: "Okay", key: "okay",
+        good: "Loud. Cuts cruise noise. People in the back hear it.",
+        bad: "Piercing mid honk. Can sound shouty. Not warm.",
+        more: "The 757 PA is famous for being present, not pretty. A long single-aisle with a hot 2 kHz bump."
+      },
+      "767-300": {
+        year: "1986", body: "Early twin-aisle",
+        system: "Analog/digital hybrid, 4-inch class cones",
+        grade: "Fair", key: "fair",
+        good: "Fuller than a 737. Twin-aisle has more speaker options.",
+        bad: "Boxy 80s voicing. Aisle fade and bin shadows. Some skip risk.",
+        more: "First-gen widebody Boeing PA. Designed around STI, not music. Uneven at the window seats."
+      },
+      "777-200": {
+        year: "1995", body: "Digital widebody",
+        system: "Early digital PA, PSU cones",
+        grade: "Okay", key: "okay",
+        good: "Fuller and cleaner than 80s Boeings. Fewer analog artifacts.",
+        bad: "Still cone speakers. A little echo. Not 787-quiet.",
+        more: "First Boeing that feels like a modern system. Speech-band by choice, digital by architecture."
+      },
+      "777-300er": {
+        year: "2004", body: "Long digital widebody",
+        system: "Same 777 digital chain, longer tube",
+        grade: "Okay", key: "okay",
+        good: "Same clean digital feed as the -200.",
+        bad: "More echo aft. Tail speakers are a long way from the handset.",
+        more: "Stretch the cabin and the PA stays the same. You hear distance more than you hear new hardware."
+      },
+      "787-8": {
+        year: "2011", body: "Composite, quiet cabin",
+        system: "DSP PA, IFE override, modern CIDS-class director",
+        grade: "Good", key: "good",
+        good: "Quiet cabin means less shouting. Cleaner band, less grain, rare skips.",
+        bad: "Still not a studio. Small speakers, some cabin slap.",
+        more: "Best Boeing here. DSP, lower ambient, headphone PA ducking on some airlines. The mix can stay quieter and still read."
+      },
+      "787-9": {
+        year: "2014", body: "Longer 787",
+        system: "Same 787 DSP PA",
+        grade: "Good", key: "good",
+        good: "Same clean 787 chain.",
+        bad: "A slightly longer room. A bit more tail delay.",
+        more: "Same directors and speakers as the -8. You are hearing cabin length, not a different radio."
+      },
+      "a220-300": {
+        year: "2016", body: "Small quiet regional",
+        system: "CSeries digital PA, even coverage",
+        grade: "Good", key: "good",
+        good: "Short cabin, even rows, relatively clean. Easy to understand.",
+        bad: "Still a regional cone. A little thin on the bottom.",
+        more: "Bombardier-era acoustics. Small room is an advantage. One of the least painful modern PAs."
+      },
+      "a300-600": {
+        year: "1983", body: "Early Airbus widebody",
+        system: "Pre-CIDS analog character",
+        grade: "Poor", key: "poor",
+        good: "Widebody speakers can get loud enough.",
+        bad: "Grainy, uneven rows, analog leftovers. Skips are common.",
+        more: "Before the mature CIDS director era. Sounds older than an A320 even when the airframe is similar vintage."
+      },
+      "a310": {
+        year: "1983", body: "Shorter A300 cousin",
+        system: "Same early Airbus PA generation",
+        grade: "Poor", key: "poor",
+        good: "Shorter cabin than the A300, so a bit less echo.",
+        bad: "Same grainy chain. Still analog in the bones.",
+        more: "Same generation, slightly less hallway. Not a new system."
+      },
+      "a318": {
+        year: "2003", body: "Very short A320 family",
+        system: "CIDS, per-speaker amps, six audio channels",
+        grade: "Okay", key: "okay",
+        good: "Short cabin, consistent CIDS levels, little echo.",
+        bad: "Boxy small-cone voicing. Digital, not warm.",
+        more: "CIDS is the Airbus idea: director, DEU-A, programmed gain/EQ per speaker. The baby bus shows that at its most even."
+      },
+      "a319": {
+        year: "1996", body: "Short A320 family",
+        system: "CIDS digital PA",
+        grade: "Okay", key: "okay",
+        good: "Even coverage. Less row fade than an A321.",
+        bad: "Small PSU cones. Speech-band EQ on purpose.",
+        more: "Same CIDS as the A320. The shorter tube is the upgrade."
+      },
+      "a320": {
+        year: "1988", body: "Standard single-aisle",
+        system: "CIDS: digital director, DEU-A, per-speaker amps",
+        grade: "Okay", key: "okay",
+        good: "Consistent zones. Programmable EQ. Digital feed is cleaner than old Boeing analog.",
+        bad: "Still 3–4 inch cones. A little hollow. Not hi-fi.",
+        more: "The textbook Airbus PA. Three attendant channels, three passenger channels, speaker-by-speaker gain. Built for STI, not music."
+      },
+      "a321": {
+        year: "1994", body: "Long single-aisle",
+        system: "Same A320 CIDS, longer tube",
+        grade: "Okay", key: "okay",
+        good: "Same digital consistency up front.",
+        bad: "More row-to-row fade and a little slap in the back.",
+        more: "Identical directors, more seats. The PA does not grow with the fuselage."
+      },
+      "a330-200": {
+        year: "1998", body: "Widebody twin",
+        system: "Widebody CIDS",
+        grade: "Okay", key: "okay",
+        good: "Warmer and fuller than a 767. Digital zones.",
+        bad: "Cabin slap. Window seats still sit in bin shadows.",
+        more: "CIDS scaled to a twin-aisle. Better electronics than early Boeings; the room still wins some arguments."
+      },
+      "a330-300": {
+        year: "1994", body: "Longer A330",
+        system: "Same CIDS directors",
+        grade: "Okay", key: "okay",
+        good: "Same A330 voicing.",
+        bad: "More distance to the tail. A bit more echo.",
+        more: "Stretch penalty. Hardware is the same; the last rows hear more hallway."
+      },
+      "a340-300": {
+        year: "1993", body: "Four-engine widebody",
+        system: "Older CIDS generation, analog leftovers",
+        grade: "Fair", key: "fair",
+        good: "Understandable, a little warmer than a 747-200.",
+        bad: "Hollow, grainier than later A330s. More skip risk.",
+        more: "Same family as the A330, earlier production feel. The PA sounds a generation behind a late A330."
+      },
+      "a340-600": {
+        year: "2002", body: "Very long quad",
+        system: "Older CIDS in a huge tube",
+        grade: "Fair", key: "fair",
+        good: "It reaches the back, usually.",
+        bad: "Coverage gaps, trailing echo, hollow mids. One of the harder Airbuses to make even.",
+        more: "Longest single-deck Airbus of its day. Electronics cannot hide a 75-meter hallway."
+      },
+      "a350-900": {
+        year: "2015", body: "Quiet composite widebody",
+        system: "Modern DSP CIDS",
+        grade: "Good", key: "good",
+        good: "Clearest Airbus here. Wide band, low grain, rare skips, quiet cabin.",
+        bad: "Still a PA. A little cabin bloom, not a close mic.",
+        more: "This is what CIDS looks like after DSP and a quieter airframe. Speech can stay natural and still beat cruise noise."
+      },
+      "a350-1000": {
+        year: "2018", body: "Longer A350",
+        system: "Same modern CIDS",
+        grade: "Good", key: "good",
+        good: "Same clean A350 chain.",
+        bad: "Slightly more tail delay than the -900.",
+        more: "Same directors. You are hearing length, not a different radio."
+      },
+      "a380-800": {
+        year: "2007", body: "Two decks, huge volume",
+        system: "Digital CIDS, many zones",
+        grade: "Okay", key: "okay",
+        good: "Clean electronics. Lots of speakers. Zones can be balanced.",
+        bad: "Most hall-like cabin. Long paths, deck-to-deck differences, some coverage holes.",
+        more: "Best example of 'the system is good and the room is the problem.' Two decks, long lines, lots of slap."
+      }
+    };
+
     let lastProcessedPlane = "";
     let lastHadTone = false;
 
@@ -525,9 +838,43 @@
       updateAircraftMeta();
     }
 
+    function grainLabel(ac) {
+      if (ac.grainSteps <= 40) return "extreme";
+      if (ac.grainSteps <= 100) return "heavy";
+      if (ac.grainSteps <= 180) return "medium";
+      if (ac.grainSteps <= 280) return "light";
+      return "clean";
+    }
+
+    function skipLabel(ac) {
+      if (ac.skipChance >= 0.7) return "constant";
+      if (ac.skipChance >= 0.45) return "common";
+      if (ac.skipChance >= 0.28) return "occasional";
+      return "rare";
+    }
+
     function updateAircraftMeta() {
       const ac = currentPlane();
+      const d = DOSSIERS[ac.id];
       acMetaEl.textContent = ac.blurb;
+      if (!d) {
+        dossierEl.innerHTML = "";
+        return;
+      }
+      dossierEl.innerHTML =
+        '<div class="dossier-top">' +
+          '<span class="dossier-k">PA verdict</span>' +
+          '<span class="dossier-grade ' + d.key + '">' + d.grade + '</span>' +
+        '</div>' +
+        '<dl class="dossier-grid">' +
+          '<dt>Year</dt><dd>' + d.year + " · " + d.body + '</dd>' +
+          '<dt>System</dt><dd>' + d.system + '</dd>' +
+          '<dt>Band</dt><dd>' + Math.round(ac.hp) + "–" + Math.round(ac.lp) + " Hz speech band</dd>" +
+          '<dt>Grain</dt><dd>' + grainLabel(ac) + " · skips " + skipLabel(ac) + '</dd>' +
+        "</dl>" +
+        "<p><b>Good.</b> " + d.good + "</p>" +
+        "<p><b>Bad.</b> " + d.bad + "</p>" +
+        "<p><b>More.</b> " + d.more + "</p>";
     }
 
 
