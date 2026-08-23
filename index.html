@@ -251,6 +251,7 @@
     .dossier-grade.fair { color: #c9b06a; }
     .dossier-grade.okay { color: var(--amber); }
     .dossier-grade.good { color: #8fbf7a; }
+    .dossier-grade.great { color: #6ed0a0; }
 
     .dossier-grid {
       display: grid;
@@ -483,6 +484,43 @@
         delay: 0.038, reverb: 0.13, skipChance: 0.15, skipMax: 0.14, skipCount: [0, 1],
         blurb: "Same 787 system, slightly longer cabin."
       }),
+      plane("797-nma", "Boeing", "797 (NMA)", {
+        hp: 200, lp: 6400, presence: 1350, presenceGain: 1.0, drive: 1.8,
+        grainSteps: 540, hiss: 0.0009, noise: 0.0028, gain: 1.1, dingGain: 1.0,
+        compThresh: -28, compRatio: 2.8, delay: 0.022, reverb: 0.06,
+        skipChance: 0.04, skipMax: 0.07, skipCount: [0, 1],
+        blurb: "Unbuilt NMA. Great flight-deck mic, quiet composite cabin, DSP PA that actually sounds like a person."
+      }),
+      plane("747-sp", "Boeing", "747SP", {
+        hp: 360, lp: 2900, presence: 1700, presenceGain: 3.6, drive: 13,
+        grainSteps: 130, hiss: 0.012, noise: 0.022, gain: 0.92,
+        delay: 0.032, reverb: 0.12, skipChance: 0.48, skipMax: 0.34, skipCount: [1, 2],
+        blurb: "Short jumbo. Analog 747 PA in a stubbier tube. Still grainy, less hallway than a -200."
+      }),
+      plane("717-200", "Boeing", "717-200", {
+        hp: 355, lp: 3050, presence: 1800, presenceGain: 3.5, drive: 12,
+        grainSteps: 150, hiss: 0.011, noise: 0.02, gain: 0.95,
+        delay: 0.02, reverb: 0.07, skipChance: 0.4, skipMax: 0.28,
+        blurb: "MD-95 in Boeing paint. Rear-engine regional, a bit nasal, short-cabin analog."
+      }),
+      plane("777-9", "Boeing", "777-9", {
+        hp: 250, lp: 4700, presence: 1500, presenceGain: 1.8, drive: 4,
+        grainSteps: 380, hiss: 0.0022, noise: 0.0065, gain: 1.0,
+        delay: 0.044, reverb: 0.16, skipChance: 0.12, skipMax: 0.12, skipCount: [0, 1],
+        blurb: "777X. New digital cabin, long folding-wing widebody. Clean chain, still a long room."
+      }),
+      plane("vc-25a", "Boeing", "VC-25A", {
+        hp: 300, lp: 3800, presence: 1600, presenceGain: 2.4, drive: 6,
+        grainSteps: 290, hiss: 0.004, noise: 0.01, gain: 1.06, dingGain: 0.98,
+        delay: 0.04, reverb: 0.15, skipChance: 0.12, skipMax: 0.12, skipCount: [0, 1],
+        blurb: "Air Force One 747-200. Special comms and redundant amps. Cabin PA is better than a stock jumbo."
+      }),
+      plane("747-lcf", "Boeing", "747 LCF", {
+        hp: 390, lp: 2600, presence: 1550, presenceGain: 3.9, drive: 16,
+        grainSteps: 90, hiss: 0.018, noise: 0.03, gain: 0.8,
+        delay: 0.06, reverb: 0.28, skipChance: 0.55, skipMax: 0.4, skipCount: [1, 3],
+        blurb: "Dreamlifter. Cargo bulge, almost no passenger cabin. PA is a warehouse horn."
+      }),
       plane("a220-300", "Airbus", "A220-300", {
         hp: 300, lp: 3900, presence: 1600, presenceGain: 2.5, drive: 6,
         grainSteps: 300, hiss: 0.004, noise: 0.01, gain: 0.96,
@@ -566,6 +604,90 @@
         grainSteps: 330, hiss: 0.0032, noise: 0.0085, gain: 0.97,
         delay: 0.055, reverb: 0.26, skipChance: 0.3, skipMax: 0.22, skipCount: [0, 2],
         blurb: "Two decks, long paths. Clean electronics, the most hall-like cabin."
+      }),
+      plane("a320neo", "Airbus", "A320neo", {
+        hp: 325, lp: 3600, presence: 1620, presenceGain: 2.7, drive: 7,
+        grainSteps: 270, hiss: 0.005, noise: 0.012, gain: 1.02,
+        delay: 0.022, reverb: 0.08, skipChance: 0.24, skipMax: 0.18, skipCount: [0, 1],
+        blurb: "Same CIDS bones as the A320, quieter LEAP/PW engines. A little cleaner than ceo."
+      }),
+      plane("a321xlr", "Airbus", "A321XLR", {
+        hp: 330, lp: 3500, presence: 1630, presenceGain: 2.8, drive: 7.5,
+        grainSteps: 255, hiss: 0.0055, noise: 0.013, gain: 1.0,
+        delay: 0.032, reverb: 0.12, skipChance: 0.28, skipMax: 0.22,
+        blurb: "Long-range single-aisle. CIDS is fine; the extra tanks and length add a bit of fade aft."
+      }),
+      plane("a330-beluga", "Airbus", "Beluga XL", {
+        hp: 370, lp: 2750, presence: 1500, presenceGain: 3.5, drive: 14,
+        grainSteps: 115, hiss: 0.015, noise: 0.025, gain: 0.84,
+        delay: 0.07, reverb: 0.3, skipChance: 0.5, skipMax: 0.36, skipCount: [1, 2],
+        blurb: "A330-743L outsize cargo. The upper lobe is a hangar. PA is a cargo-hold shout."
+      }),
+      plane("concorde", "Aérospatiale/BAC", "Concorde", {
+        hp: 420, lp: 2500, presence: 1950, presenceGain: 5.0, presenceQ: 1.2,
+        drive: 20, grainSteps: 70, hiss: 0.022, noise: 0.034, gain: 0.78, dingGain: 0.7,
+        delay: 0.026, reverb: 0.09, skipChance: 0.6, skipMax: 0.4, skipCount: [1, 3],
+        blurb: "Mach 2 narrow cabin, 1960s analog. Tiny, loud, and very nasal over the intakes."
+      }),
+      plane("l-1011", "Lockheed", "L-1011 TriStar", {
+        hp: 335, lp: 3300, presence: 1680, presenceGain: 3.1, drive: 10,
+        grainSteps: 175, hiss: 0.009, noise: 0.017, gain: 0.98,
+        delay: 0.038, reverb: 0.16, skipChance: 0.36, skipMax: 0.26,
+        blurb: "Autoland-era widebody. Smoother analog than a DC-10. Still 1970s cones."
+      }),
+      plane("dc-10", "McDonnell Douglas", "DC-10", {
+        hp: 375, lp: 2700, presence: 1750, presenceGain: 4.0, drive: 15,
+        grainSteps: 105, hiss: 0.016, noise: 0.026, gain: 0.88,
+        delay: 0.042, reverb: 0.18, skipChance: 0.52, skipMax: 0.38, skipCount: [1, 2],
+        blurb: "Trijet widebody analog. Honky, grainy, and a little harsh in the back."
+      }),
+      plane("md-80", "McDonnell Douglas", "MD-80", {
+        hp: 390, lp: 2650, presence: 2050, presenceGain: 5.2, presenceQ: 1.25,
+        drive: 18, grainSteps: 78, hiss: 0.019, noise: 0.03, gain: 0.9,
+        delay: 0.022, reverb: 0.08, skipChance: 0.5, skipMax: 0.34, skipCount: [1, 2],
+        blurb: "Rear-engine Mad Dog. Famous nasal PA. Sounds like a drive-through speaker."
+      }),
+      plane("md-11", "McDonnell Douglas", "MD-11", {
+        hp: 350, lp: 3000, presence: 1720, presenceGain: 3.6, drive: 12,
+        grainSteps: 145, hiss: 0.012, noise: 0.021, gain: 0.93,
+        delay: 0.045, reverb: 0.19, skipChance: 0.42, skipMax: 0.3, skipCount: [1, 2],
+        blurb: "Stretched DC-10 family. A bit cleaner, still analog, long-cabin slap."
+      }),
+      plane("bae-146", "BAe", "BAe 146", {
+        hp: 360, lp: 3000, presence: 1780, presenceGain: 3.4, drive: 11,
+        grainSteps: 160, hiss: 0.011, noise: 0.02, gain: 0.9,
+        delay: 0.018, reverb: 0.06, skipChance: 0.4, skipMax: 0.28,
+        blurb: "Whisper jet outside, cheap regional PA inside. Short cabin, boxy cones."
+      }),
+      plane("fokker-100", "Fokker", "Fokker 100", {
+        hp: 350, lp: 3100, presence: 1760, presenceGain: 3.3, drive: 11,
+        grainSteps: 165, hiss: 0.01, noise: 0.019, gain: 0.94,
+        delay: 0.02, reverb: 0.07, skipChance: 0.38, skipMax: 0.26,
+        blurb: "Rear-engine regional. Tidy Dutch analog, still telephone-band."
+      }),
+      plane("q400", "De Havilland", "Dash 8 Q400", {
+        hp: 400, lp: 2550, presence: 1900, presenceGain: 4.7, drive: 16,
+        grainSteps: 95, hiss: 0.018, noise: 0.032, gain: 1.08, dingGain: 0.85,
+        delay: 0.016, reverb: 0.05, skipChance: 0.45, skipMax: 0.3,
+        blurb: "Loud turboprop. PA has to shout over the props. Harsh and close."
+      }),
+      plane("atr-72", "ATR", "ATR 72-600", {
+        hp: 410, lp: 2480, presence: 1880, presenceGain: 4.5, drive: 15,
+        grainSteps: 100, hiss: 0.017, noise: 0.03, gain: 1.05, dingGain: 0.84,
+        delay: 0.015, reverb: 0.045, skipChance: 0.46, skipMax: 0.3,
+        blurb: "High-wing turboprop. Same fight with prop noise. Thin, loud, a little scratchy."
+      }),
+      plane("e195-e2", "Embraer", "E195-E2", {
+        hp: 280, lp: 4100, presence: 1580, presenceGain: 2.3, drive: 5.5,
+        grainSteps: 320, hiss: 0.0035, noise: 0.009, gain: 0.98,
+        delay: 0.02, reverb: 0.07, skipChance: 0.16, skipMax: 0.14, skipCount: [0, 1],
+        blurb: "Modern E-Jet. Quiet for a regional, clean digital PA, even rows."
+      }),
+      plane("c919", "COMAC", "C919", {
+        hp: 320, lp: 3700, presence: 1620, presenceGain: 2.6, drive: 7,
+        grainSteps: 275, hiss: 0.005, noise: 0.012, gain: 1.0,
+        delay: 0.024, reverb: 0.09, skipChance: 0.22, skipMax: 0.18, skipCount: [0, 1],
+        blurb: "New Chinese narrowbody. Honeywell-class cabin systems. Clean, a little generic."
       })
     ];
 
@@ -810,6 +932,166 @@
         good: "Clean electronics. Lots of speakers. Zones can be balanced.",
         bad: "Most hall-like cabin. Long paths, deck-to-deck differences, some coverage holes.",
         more: "Best example of 'the system is good and the room is the problem.' Two decks, long lines, lots of slap."
+      },
+      "797-nma": {
+        year: "NMA / unbuilt", body: "225–275 seat midsize, 757/767 hole",
+        system: "Clean-sheet DSP PA, 787-class cabin, great flight-deck mic",
+        grade: "Great", key: "great",
+        good: "The mic is the point. Close, quiet, little boom. Composite cabin is hush. Wide band, almost no grain, almost no skips. It sounds like a person, not a telephone.",
+        bad: "It was never built. This is the NMA as promised: 787 tech in a smaller room. Your airline does not have one.",
+        more: "Boeing’s New Midsize Airplane, often called 797. 225-seat NMA-6X and 275-seat NMA-7X studies, composite airframe, high-bypass engines, 787-family systems. Shelved after the MAX crisis and A321XLR. In this sim it is the great-mic plane: boom-rejecting handset, quiet cruise, DSP that does not have to shout."
+      },
+      "747-sp": {
+        year: "1976", body: "Shortened jumbo, long-range",
+        system: "Analog 747 PA in a stubbier tube",
+        grade: "Fair", key: "fair",
+        good: "Shorter than a -200, so less hallway. Still a real jumbo speaker count.",
+        bad: "Same analog grain and bin shadows. Special-performance does not mean special PA.",
+        more: "747SP cut the fuselage for range. The PA amp family is 1970s jumbo. You hear a shorter 747, not a new radio."
+      },
+      "717-200": {
+        year: "1999", body: "Rear-engine regional, ex MD-95",
+        system: "Late MD analog PA, short cabin",
+        grade: "Fair", key: "fair",
+        good: "Short cabin, enough level, less echo than an MD-80 stretch.",
+        bad: "Still nasal. Rear engines and a Douglas-family cone.",
+        more: "Boeing inherited the MD-95. It is a tidy regional, not a 787. The PA never got a clean-sheet."
+      },
+      "777-9": {
+        year: "2020s", body: "Longest 777, folding wingtips",
+        system: "New 777X digital cabin",
+        grade: "Good", key: "good",
+        good: "Modern directors, wide band, low grain. Cleaner than a 777-300ER.",
+        bad: "Very long room. Tail delay and a little bloom remain.",
+        more: "777X cabin systems are new; the fuselage is still a long twin-aisle. Electronics improved, geometry did not shrink."
+      },
+      "vc-25a": {
+        year: "1990", body: "Two 747-200Bs, presidential",
+        system: "Redundant special-mission comms plus cabin PA",
+        grade: "Good", key: "good",
+        good: "Better amps, backups, and a treated cabin. Crew can be understood.",
+        bad: "Still a 747-200 room. Some slap. Not a 797 mic.",
+        more: "VC-25A is Air Force One’s 747-200. The comms suite is special-mission. The passenger-address path is a stock jumbo that got extra care and redundancy, not a studio."
+      },
+      "747-lcf": {
+        year: "2006", body: "747-400 Large Cargo Freighter",
+        system: "Cargo-hold PA / horn in a bubble",
+        grade: "Poor", key: "poor",
+        good: "Someone on the cargo floor can hear a shout.",
+        bad: "No real passenger cabin. Huge volume, slap, grain. Warehouse acoustics.",
+        more: "Dreamlifter. The upper lobe is for 787 barrels. A PA here is a safety horn, not a cabin announcement."
+      },
+      "a320neo": {
+        year: "2016", body: "Re-engined A320",
+        system: "CIDS, slightly quieter cruise",
+        grade: "Okay", key: "okay",
+        good: "Same even CIDS as ceo, a bit less engine roar to fight.",
+        bad: "Same small cones. Not a new PA architecture.",
+        more: "neo changed the engines. The director and DEU-A are still A320 family. Cleaner only because the room is quieter."
+      },
+      "a321xlr": {
+        year: "2024", body: "Long-range A321, extra tanks",
+        system: "A320-family CIDS",
+        grade: "Okay", key: "okay",
+        good: "Digital, consistent up front. Fine for a single-aisle.",
+        bad: "Longest A321. More fade and slap in the last rows.",
+        more: "The XLR is an A321 with range. CIDS did not grow. Rear tanks and length are the PA story."
+      },
+      "a330-beluga": {
+        year: "2019", body: "A330-743L outsize cargo",
+        system: "A330 CIDS leftover in a cargo lobe",
+        grade: "Poor", key: "poor",
+        good: "You can page the cargo deck.",
+        bad: "The upper lobe is a hangar. Echo, hollow mids, no passenger trim.",
+        more: "Beluga XL moves A350 wings. There is almost no airline cabin. The PA is industrial."
+      },
+      "concorde": {
+        year: "1976", body: "Mach 2, 100 seats, tiny tube",
+        system: "1960s analog, no DSP",
+        grade: "Poor", key: "poor",
+        good: "Short cabin, so you are never far from a speaker.",
+        bad: "Intake and skin noise, nasal analog, dropouts. A glamorous telephone.",
+        more: "Concorde’s cabin is small and loud. The PA is contemporary with early widebodies, not with the speed. Intelligibility over the intakes was the whole design."
+      },
+      "l-1011": {
+        year: "1972", body: "Lockheed widebody trijet",
+        system: "Refined 1970s analog",
+        grade: "Fair", key: "fair",
+        good: "Smoother than a DC-10. Lockheed spent on systems. Speech is even.",
+        bad: "Still cones and analog grain. Widebody slap.",
+        more: "The TriStar was the over-engineered one. Autoland and a nicer cabin, but the PA is still 1972. Better manners, same physics."
+      },
+      "dc-10": {
+        year: "1971", body: "McDonnell Douglas widebody trijet",
+        system: "Analog jumbo-class PA",
+        grade: "Poor", key: "poor",
+        good: "Loud enough in the mid cabin.",
+        bad: "Harsh, grainy, honky. Aft is a long way from the handset.",
+        more: "DC-10 PA is the blunt instrument next to the L-1011. Same era, less polish."
+      },
+      "md-80": {
+        year: "1980", body: "Rear-engine narrowbody",
+        system: "Douglas-family analog, peaky cones",
+        grade: "Poor", key: "poor",
+        good: "You will hear it. The 2 kHz bump cuts the cabin.",
+        bad: "Famous nasal ‘Mad Dog’ PA. Drive-through energy. Grain and skips.",
+        more: "MD-80 announcements are a genre. Rear engines, a long thin tube, and a honky analog amp. People remember the sound."
+      },
+      "md-11": {
+        year: "1990", body: "Stretched DC-10 trijet",
+        system: "Later MD analog/digital hybrid",
+        grade: "Fair", key: "fair",
+        good: "A step up from the DC-10. A bit fuller.",
+        bad: "Long cabin, leftover honk, slap in the back.",
+        more: "MD-11 is a DC-10 that went to finishing school. The PA improved. The hallway got longer."
+      },
+      "bae-146": {
+        year: "1983", body: "High-wing quad regional",
+        system: "Cheap regional analog",
+        grade: "Fair", key: "fair",
+        good: "Short cabin. Whisper engines outside help a little.",
+        bad: "Boxy, thin, budget cones. Not a 146 luxury inside.",
+        more: "Quiet approach, ordinary PA. The whisper is airframe and engines, not the speakers."
+      },
+      "fokker-100": {
+        year: "1988", body: "Rear-engine 100-seater",
+        system: "Tidy analog regional",
+        grade: "Fair", key: "fair",
+        good: "Even enough. Less hysteria than an MD-80.",
+        bad: "Telephone band. A little nasal.",
+        more: "Fokker’s last airliner. Competent, not romantic. The PA matches: tidy and limited."
+      },
+      "q400": {
+        year: "2000", body: "Fast turboprop, very loud cabin",
+        system: "Regional PA fighting props",
+        grade: "Poor", key: "poor",
+        good: "It is loud on purpose. You hear the crew over the blades.",
+        bad: "Harsh, close, shouty. Almost no low end. Fatigue.",
+        more: "Q400 cabins are prop-noise environments. The PA is a megaphone. Intelligibility is a volume fight."
+      },
+      "atr-72": {
+        year: "2011", body: "High-wing turboprop",
+        system: "Regional PA vs prop and gearbox",
+        grade: "Poor", key: "poor",
+        good: "Short cabin, enough shout.",
+        bad: "Thin, scratchy, drowned at the window seats.",
+        more: "ATR 72-600 is newer than a Q400 in avionics, not in cabin hush. Same physics: props win, PA yells."
+      },
+      "e195-e2": {
+        year: "2018", body: "Quietish large regional",
+        system: "Modern digital PA",
+        grade: "Good", key: "good",
+        good: "Even rows, clean band, low grain. Easy to understand.",
+        bad: "Still a regional cone. A little thin.",
+        more: "E2 is the grown-up E-Jet. Cabin noise dropped; the PA can stay polite. One of the better speciality regionals."
+      },
+      "c919": {
+        year: "2023", body: "COMAC narrowbody",
+        system: "Western-supplied cabin systems, digital",
+        grade: "Okay", key: "okay",
+        good: "Clean, consistent, modern. No analog honk.",
+        bad: "Generic. Small-cone speech band. Not a 797 mic.",
+        more: "C919 uses bought-in cabin electronics. It sounds like a new A320-class jet: fine, even, unmemorable."
       }
     };
 
@@ -843,7 +1125,8 @@
       if (ac.grainSteps <= 100) return "heavy";
       if (ac.grainSteps <= 180) return "medium";
       if (ac.grainSteps <= 280) return "light";
-      return "clean";
+      if (ac.grainSteps <= 420) return "clean";
+      return "almost none";
     }
 
     function skipLabel(ac) {
