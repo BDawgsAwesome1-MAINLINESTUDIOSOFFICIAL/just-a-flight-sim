@@ -187,6 +187,32 @@
       font-size: 11px;
       line-height: 1.4;
     }
+
+    .tone-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      color: var(--cream);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .tone-row input {
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      margin: 0;
+      border: 1px solid #5a5246;
+      background: var(--inset);
+    }
+
+    .tone-row input:checked {
+      background: var(--amber);
+      border-color: var(--amber);
+    }
   </style>
 </head>
 <body>
@@ -200,6 +226,10 @@
       <label for="aircraft">Aircraft</label>
       <select id="aircraft"></select>
       <p id="ac-meta" class="ac-meta"></p>
+      <label class="tone-row" for="force-tone">
+        <input id="force-tone" type="checkbox" />
+        Force high PA tone
+      </label>
     </div>
 
     <section class="screen">
@@ -236,6 +266,7 @@
     const noteEl = document.getElementById("note");
     const aircraftEl = document.getElementById("aircraft");
     const acMetaEl = document.getElementById("ac-meta");
+    const forceToneEl = document.getElementById("force-tone");
 
     let audioCtx = null;
     let chimeBuffer = null;
@@ -862,7 +893,7 @@
       noiseFilter.connect(noiseGain);
       noiseGain.connect(lowpass);
 
-      lastHadTone = Math.random() < 0.15;
+      lastHadTone = forceToneEl.checked || Math.random() < 0.15;
       if (lastHadTone) {
         const tone = ctx.createOscillator();
         tone.type = "sine";
@@ -1050,6 +1081,17 @@
       updateAircraftMeta();
       if (recordedBlob) {
         setNote("Aircraft set to " + currentPlane().name + ". Preview or export to hear this PA.");
+      }
+    });
+    forceToneEl.addEventListener("change", () => {
+      processedBlob = null;
+      lastProcessedPlane = "";
+      if (recordedBlob) {
+        setNote(
+          forceToneEl.checked
+            ? "High PA tone forced on. Preview or export to hear it."
+            : "High PA tone is random again (about 15%). Preview or export to rebuild."
+        );
       }
     });
     fillAircraftSelect();
