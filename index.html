@@ -1282,7 +1282,6 @@
 
     let cabinBuffer = null;
     let cabinLive = [];
-    let cabinOn = false;
 
     async function loadCabin() {
       if (cabinBuffer) return cabinBuffer;
@@ -1329,13 +1328,13 @@
         lfoGain.connect(gain.gain);
         lfo.start();
         if (duration) lfo.stop(duration);
-        cabinLive.push(lfo);
+        else cabinLive.push(lfo);
       }
       lp.connect(gain);
       gain.connect(dest);
       source.start();
       if (duration) source.stop(duration);
-      cabinLive.push(source);
+      else cabinLive.push(source);
       return source;
     }
 
@@ -1345,7 +1344,6 @@
       if (ctx.state === "suspended") await ctx.resume();
       await loadCabin();
       connectCabinGraph(ctx, ctx.destination, 0);
-      cabinOn = true;
     }
 
     function stopCabin() {
@@ -1354,12 +1352,6 @@
         try { node.disconnect(); } catch (_) {}
       });
       cabinLive = [];
-      cabinOn = false;
-    }
-
-    async function ensureCabin() {
-      if (cabinOn) return;
-      await startCabin();
     }
 
     function setStatus(text) {
@@ -1458,6 +1450,11 @@
       recordedBlob = null;
       processedBlob = null;
       lastProcessedPlane = "";
+      stopCabin();
+      if (previewAudio) {
+        previewAudio.pause();
+        previewAudio = null;
+      }
       setOff(previewBtn, true);
       setOff(exportBtn, true);
       setOff(talkBtn, true);
@@ -1501,8 +1498,6 @@
         setNote("Recorded. Preview or export through the selected " + currentPlane().name + " PA.");
       };
 
-      try { await ensureCabin(); } catch (_) {}
-
       try {
         await playChime();
       } catch (err) {
@@ -1520,7 +1515,7 @@
       talkBtn.classList.add("live");
       talkBtn.textContent = "End Transmission";
       setStatus("Live");
-      setNote("Recording. Cabin rumble is up for the " + currentPlane().name + ". Speak after the chime.");
+      setNote("Recording. Speak after the chime.");
     }
 
     function stopAnnouncement() {
@@ -1700,12 +1695,21 @@
     async function assembleAnnouncement(voiceBuffer) {
       const ding = await loadChime();
       const treated = await applyPaTreatment(voiceBuffer);
+      await loadCabin();
+      const hang = await loadHangup();
       const sampleRate = 48000;
-      const dingLen = Math.ceil(bufferDuration(ding) * sampleRate);
+      const dingDur = bufferDuration(ding);
+      const hangDur = bufferDuration(hang);
+      const hangGap = 0.2;
+      const dingLen = Math.ceil(dingDur * sampleRate);
       const voiceLen = treated.length;
       const gap = Math.round(sampleRate * 0.12);
-      const total = dingLen + gap + voiceLen;
-      const out = new OfflineAudioContext(1, total, sampleRate);
+      const hangGapLen = Math.round(sampleRate * hangGap);
+      const hangLen = Math.ceil(hangDur * sampleRate);
+      const paLen = dingLen + gap + voiceLen;
+      const total = paLen + hangGapLen + hangLen;
+      const paSecs = paLen / sampleRate;
+      const out = new OfflineAudioContext(1, Math.max(1, total), sampleRate);
 
       const dingSource = out.createBufferSource();
       dingSource.buffer = ding;
@@ -1718,7 +1722,14 @@
       const voiceSource = out.createBufferSource();
       voiceSource.buffer = treated;
       voiceSource.connect(out.destination);
-      voiceSource.start(bufferDuration(ding) + 0.12);
+      voiceSource.start(dingDur + 0.12);
+
+      connectCabinGraph(out, out.destination, paSecs);
+
+      const hangSource = out.createBufferSource();
+      hangSource.buffer = hang;
+      hangSource.connect(out.destination);
+      hangSource.start(paSecs + hangGap);
 
       return out.startRendering();
     }
@@ -1791,19 +1802,18 @@
         }
         previewAudio = new Audio(URL.createObjectURL(blob));
         previewAudio.onended = () => {
-          playHangup();
           setOff(previewBtn, false);
           setStatus("Recorded");
           setNote("Handset back on the hook.");
         };
-        try { await ensureCabin(); } catch (_) {}
         await previewAudio.play();
         setStatus("Preview");
         setNote(
-          "Playing the " + currentPlane().name + " PA mix over cabin rumble. When it ends, the handset goes back on the stand." +
+          "Playing the " + currentPlane().name + " mix with cabin rumble. Hang-up is at the end." +
           (lastHadTone ? " A faint high tone is in this take." : "")
         );
       } catch (err) {
+        stopCabin();
         setOff(previewBtn, false);
         setStatus("Recorded");
         setNote("Could not build the preview.", true);
@@ -1825,7 +1835,7 @@
         setTimeout(() => URL.revokeObjectURL(url), 1500);
         setStatus("Exported");
         setNote(
-          "Saved a " + currentPlane().name + " PA mix. Handset back on the hook." +
+          "Saved a " + currentPlane().name + " mix with cabin rumble and hang-up." +
           (lastHadTone ? " A faint high tone crept into this take." : "")
         );
       } catch (err) {
@@ -1862,11 +1872,14 @@
       processedBlob = null;
       lastProcessedPlane = "";
       updateAircraftMeta();
-      startCabin();
+      stopCabin();
+      if (previewAudio) {
+        previewAudio.pause();
+        previewAudio = null;
+        setOff(previewBtn, false);
+      }
       if (recordedBlob) {
-        setNote("Aircraft set to " + currentPlane().name + ". Cabin is " + cabinLabel(currentPlane()) + ". Preview or export to hear this PA.");
-      } else {
-        setNote("Aircraft set to " + currentPlane().name + ". Cabin is " + cabinLabel(currentPlane()) + ".");
+        setNote("Aircraft set to " + currentPlane().name + ". Preview to hear this PA over cabin rumble.");
       }
     });
     forceToneEl.addEventListener("change", () => {
@@ -1881,9 +1894,6 @@
       }
     });
     fillAircraftSelect();
-    document.addEventListener("pointerdown", () => {
-      ensureCabin();
-    }, { once: true });
   </script>
 </body>
 </html>
