@@ -1,4 +1,4 @@
-const VERSION = "jafs-v2";
+const VERSION = "jafs-v3";
 const ASSETS = [
   "./",
   "./index.html",

@@ -13,57 +13,68 @@
   <script type="module" src="./js/app.js"></script>
 </head>
 <body>
-  <main class="frame drop" id="drop">
-    <div class="plate">
-      <strong>just a flight sim</strong>
-      <nav>
-        <a class="is-here" href="./index.html">Crew</a>
-        <a href="./fleet.html">Fleet</a>
-      </nav>
-    </div>
-
-    <div class="ac-block">
-      <label for="aircraft">Aircraft</label>
-      <select id="aircraft"></select>
-      <p id="ac-meta" class="ac-meta"></p>
-      <label class="tone-row" for="force-tone">
-        <input id="force-tone" type="checkbox" />
-        Force high PA tone
-      </label>
-      <aside id="dossier" class="dossier" aria-live="polite"></aside>
-    </div>
-
-    <section class="screen">
-      <div class="status-row">
-        <span id="status">Ready</span>
-        <span id="timer">00:00</span>
+  <div class="deck drop" id="drop">
+    <aside class="wing">
+      <div class="plate">
+        <strong>Ops</strong>
+        <span>Side panel</span>
       </div>
-      <div class="meter" aria-hidden="true">
-        <div id="meter-fill"></div>
-      </div>
-    </section>
-
-    <button id="talk" class="talk" type="button">Begin Announcement</button>
-
-    <div class="row">
-      <button id="preview" class="ghost is-off" type="button" aria-disabled="true">Preview</button>
-      <button id="export" class="ghost is-off" type="button" aria-disabled="true">Export PA</button>
-    </div>
-    <div class="tools">
-      <button id="share" class="ghost" type="button">Copy link</button>
-      <label class="ghost" style="display:grid;place-items:center;cursor:pointer;">
+      <p class="wing-copy">Keep the crew station clean. Extra tools live out here.</p>
+      <a class="ghost wing-btn" href="./fleet.html">Fleet bible</a>
+      <button id="share" class="ghost wing-btn" type="button">Copy link</button>
+      <label class="ghost wing-btn wing-file">
         Load audio
         <input id="import" class="hidden-file" type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.webm" />
       </label>
-    </div>
+      <p class="wing-copy">Drop a WAV anywhere on this page to run it through the selected PA.</p>
+    </aside>
 
-    <section class="takes" aria-label="Saved takes">
-      <h2>Takes (this browser)</h2>
-      <div id="takes"><p class="note" style="margin:0">No saved takes yet. Record or load a file.</p></div>
-    </section>
+    <main class="frame">
+      <div class="plate">
+        <strong>just a flight sim</strong>
+        <span>Crew Station</span>
+      </div>
 
-    <p id="note" class="note">Pick an aircraft, then press the button. The chime plays and recording starts. Export uses that type’s cabin PA, including grain, dead-spot skips, rumble, and hang-up. Drop a WAV on the panel to run it through a PA without the mic.</p>
-    <p class="kbd">Space talk · P preview · E export · L copy link</p>
-  </main>
+      <div class="ac-block">
+        <label for="aircraft">Aircraft</label>
+        <select id="aircraft"></select>
+        <p id="ac-meta" class="ac-meta"></p>
+        <label class="tone-row" for="force-tone">
+          <input id="force-tone" type="checkbox" />
+          Force high PA tone
+        </label>
+        <aside id="dossier" class="dossier" aria-live="polite"></aside>
+      </div>
+
+      <section class="screen">
+        <div class="status-row">
+          <span id="status">Ready</span>
+          <span id="timer">00:00</span>
+        </div>
+        <div class="meter" aria-hidden="true">
+          <div id="meter-fill"></div>
+        </div>
+      </section>
+
+      <button id="talk" class="talk" type="button">Begin Announcement</button>
+
+      <div class="row">
+        <button id="preview" class="ghost is-off" type="button" aria-disabled="true">Preview</button>
+        <button id="export" class="ghost is-off" type="button" aria-disabled="true">Export PA</button>
+      </div>
+
+      <p id="note" class="note">Pick an aircraft, then press the button. The chime plays and recording starts. Export uses that type’s cabin PA, including grain, occasional dead-spot skips, rumble, and hang-up.</p>
+    </main>
+
+    <aside class="wing">
+      <div class="plate">
+        <strong>Jump</strong>
+        <span>Types</span>
+      </div>
+      <p class="wing-copy">Hop to a type without digging through the list.</p>
+      <div id="jumps" class="jumps"></div>
+      <p class="wing-copy kbd-line">Space talk · P preview · E export</p>
+    </aside>
+  </div>
 </body>
 </html>

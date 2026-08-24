@@ -1,7 +1,6 @@
 import { loadFleet, planeById, allPlanes, cabinLabel, grainLabel, skipLabel } from "./fleet-data.js";
 import { ensureContext, playChime, playFart, playHangup } from "./audio.js";
 import { assembleAnnouncement, decodeBlob, encodeWavAsync } from "./pa.js";
-import { saveTake, listTakes, deleteTake } from "./takes.js";
 
 const talkBtn = document.getElementById("talk");
 const previewBtn = document.getElementById("preview");
@@ -16,7 +15,7 @@ const dossierEl = document.getElementById("dossier");
 const forceToneEl = document.getElementById("force-tone");
 const shareBtn = document.getElementById("share");
 const importEl = document.getElementById("import");
-const takesEl = document.getElementById("takes");
+const jumpsEl = document.getElementById("jumps");
 const dropEl = document.getElementById("drop");
 
 let mediaRecorder = null;
@@ -116,6 +115,11 @@ function updateAircraftMeta() {
   dossierEl.innerHTML = dossierHtml(ac);
   history.replaceState(null, "", "?ac=" + encodeURIComponent(ac.id));
   persist();
+  if (jumpsEl) {
+    jumpsEl.querySelectorAll("button").forEach((btn) => {
+      btn.classList.toggle("is-on", btn.dataset.id === ac.id);
+    });
+  }
 }
 
 function pickMime() {
@@ -179,34 +183,13 @@ function enableMixButtons() {
   setOff(exportBtn, false);
 }
 
-async function renderTakes() {
-  const rows = await listTakes();
-  if (!rows.length) {
-    takesEl.innerHTML = '<p class="note" style="margin:0">No saved takes yet. Record or load a file.</p>';
-    return;
-  }
-  takesEl.innerHTML = rows.map((row) => {
-    const when = new Date(row.created).toLocaleString();
-    return (
-      '<div class="take-row" data-id="' + row.id + '">' +
-        "<span>" + (row.label || "Take") + " · " + when + "</span>" +
-        '<span><button type="button" data-act="use">Use</button> <button type="button" data-act="del">Del</button></span>' +
-      "</div>"
-    );
+function fillJumps() {
+  if (!jumpsEl) return;
+  const ids = ["dc-3", "md-80", "q400", "737-800", "797-nma", "a350-900"];
+  jumpsEl.innerHTML = ids.map((id) => {
+    const ac = planeById(id);
+    return '<button type="button" data-id="' + ac.id + '">' + ac.name + "</button>";
   }).join("");
-}
-
-async function keepTake(blob, label) {
-  try {
-    await saveTake({
-      blob,
-      mime: blob.type || "audio/webm",
-      created: Date.now(),
-      planeId: currentPlane().id,
-      label
-    });
-    await renderTakes();
-  } catch (_) {}
 }
 
 async function useBlob(blob, note) {
@@ -258,7 +241,6 @@ async function startAnnouncement() {
     stopTimer();
     setStatus("Recorded");
     setNote("Recorded. Preview or export through the selected " + currentPlane().name + " PA.");
-    keepTake(recordedBlob, currentPlane().name);
   };
 
   try {
@@ -373,7 +355,6 @@ async function exportMix() {
 async function importFile(file) {
   if (!file) return;
   await useBlob(file, "Loaded " + file.name + ". Preview through the " + currentPlane().name + " PA.");
-  keepTake(file, file.name.replace(/\.[^.]+$/, ""));
 }
 
 talkBtn.addEventListener("click", () => {
@@ -434,21 +415,14 @@ importEl.addEventListener("change", () => {
   importFile(file);
   importEl.value = "";
 });
-takesEl.addEventListener("click", async (event) => {
-  const btn = event.target.closest("button");
-  const row = event.target.closest(".take-row");
-  if (!btn || !row) return;
-  const id = Number(row.dataset.id);
-  const rows = await listTakes();
-  const take = rows.find((item) => item.id === id);
-  if (!take) return;
-  if (btn.dataset.act === "del") {
-    await deleteTake(id);
-    await renderTakes();
-    return;
-  }
-  await useBlob(take.blob, "Loaded saved take. Preview through the " + currentPlane().name + " PA.");
-});
+if (jumpsEl) {
+  jumpsEl.addEventListener("click", (event) => {
+    const btn = event.target.closest("button");
+    if (!btn) return;
+    aircraftEl.value = btn.dataset.id;
+    aircraftEl.dispatchEvent(new Event("change"));
+  });
+}
 
 ["dragenter", "dragover"].forEach((name) => {
   dropEl.addEventListener(name, (event) => {
@@ -491,8 +465,8 @@ async function boot() {
   const saved = localStorage.getItem("jafs-aircraft");
   const pick = planeById(fromUrl || saved || "737-800");
   aircraftEl.value = pick.id;
+  fillJumps();
   updateAircraftMeta();
-  await renderTakes();
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   }
