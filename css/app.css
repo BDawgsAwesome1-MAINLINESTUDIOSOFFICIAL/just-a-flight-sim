@@ -375,8 +375,49 @@ body.fleet-page {
   gap: 8px;
 }
 
-.drop.is-over {
-  outline: 1px dashed var(--amber);
+.takes-plate {
+  margin-top: 14px;
+}
+
+.takes {
+  max-height: 280px;
+  overflow: auto;
+}
+
+.take-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  border-top: 1px solid #2a261f;
+  font-size: 11px;
+}
+
+.take-row:first-child { border-top: 0; }
+
+.take-row span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.take-row button {
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid #5a5246;
+  background: #1d1a15;
+  color: var(--cream);
+  font: 600 9px inherit;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.take-row button:hover {
+  border-color: var(--amber);
+  color: var(--amber);
 }
 
 .hidden-file {

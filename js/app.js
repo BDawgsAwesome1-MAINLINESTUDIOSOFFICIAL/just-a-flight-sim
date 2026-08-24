@@ -1,6 +1,7 @@
 import { loadFleet, planeById, allPlanes, cabinLabel, grainLabel, skipLabel } from "./fleet-data.js";
 import { ensureContext, playChime, playFart, playHangup } from "./audio.js";
 import { assembleAnnouncement, decodeBlob, encodeWavAsync } from "./pa.js";
+import { saveTake, listTakes, deleteTake } from "./takes.js";
 
 const talkBtn = document.getElementById("talk");
 const previewBtn = document.getElementById("preview");
@@ -16,6 +17,7 @@ const forceToneEl = document.getElementById("force-tone");
 const shareBtn = document.getElementById("share");
 const importEl = document.getElementById("import");
 const jumpsEl = document.getElementById("jumps");
+const takesEl = document.getElementById("takes");
 const dropEl = document.getElementById("drop");
 
 let mediaRecorder = null;
@@ -192,6 +194,37 @@ function fillJumps() {
   }).join("");
 }
 
+async function renderTakes() {
+  if (!takesEl) return;
+  const rows = await listTakes();
+  if (!rows.length) {
+    takesEl.innerHTML = '<p class="wing-copy">No takes yet. Record or load audio.</p>';
+    return;
+  }
+  takesEl.innerHTML = rows.map((row) => {
+    const when = new Date(row.created).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return (
+      '<div class="take-row" data-id="' + row.id + '">' +
+        "<span>" + (row.label || "Take") + " · " + when + "</span>" +
+        '<span><button type="button" data-act="use">Use</button> <button type="button" data-act="del">Del</button></span>' +
+      "</div>"
+    );
+  }).join("");
+}
+
+async function keepTake(blob, label) {
+  try {
+    await saveTake({
+      blob,
+      mime: blob.type || "audio/webm",
+      created: Date.now(),
+      planeId: currentPlane().id,
+      label
+    });
+    await renderTakes();
+  } catch (_) {}
+}
+
 async function useBlob(blob, note) {
   recordedBlob = blob;
   processedBlob = null;
@@ -241,6 +274,7 @@ async function startAnnouncement() {
     stopTimer();
     setStatus("Recorded");
     setNote("Recorded. Preview or export through the selected " + currentPlane().name + " PA.");
+    keepTake(recordedBlob, currentPlane().name);
   };
 
   try {
@@ -355,6 +389,7 @@ async function exportMix() {
 async function importFile(file) {
   if (!file) return;
   await useBlob(file, "Loaded " + file.name + ". Preview through the " + currentPlane().name + " PA.");
+  keepTake(file, file.name.replace(/\.[^.]+$/, ""));
 }
 
 talkBtn.addEventListener("click", () => {
@@ -423,6 +458,23 @@ if (jumpsEl) {
     aircraftEl.dispatchEvent(new Event("change"));
   });
 }
+if (takesEl) {
+  takesEl.addEventListener("click", async (event) => {
+    const btn = event.target.closest("button");
+    const row = event.target.closest(".take-row");
+    if (!btn || !row) return;
+    const id = Number(row.dataset.id);
+    const rows = await listTakes();
+    const take = rows.find((item) => item.id === id);
+    if (!take) return;
+    if (btn.dataset.act === "del") {
+      await deleteTake(id);
+      await renderTakes();
+      return;
+    }
+    await useBlob(take.blob, "Loaded saved take. Preview through the " + currentPlane().name + " PA.");
+  });
+}
 
 ["dragenter", "dragover"].forEach((name) => {
   dropEl.addEventListener(name, (event) => {
@@ -467,6 +519,7 @@ async function boot() {
   aircraftEl.value = pick.id;
   fillJumps();
   updateAircraftMeta();
+  await renderTakes();
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   }
