@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fleet — just a flight sim</title>
+  <meta name="description" content="PA dossiers for the just a flight sim fleet." />
+  <meta name="theme-color" content="#14110e" />
+  <link rel="stylesheet" href="./css/app.css" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <script type="module" src="./js/fleet-page.js"></script>
+</head>
+<body class="fleet-page">
+  <main class="frame wide">
+    <div class="plate">
+      <strong>just a flight sim</strong>
+      <nav>
+        <a href="./index.html">Crew</a>
+        <a class="is-here" href="./fleet.html">Fleet</a>
+      </nav>
+    </div>
+
+    <div class="fleet-toolbar">
+      <input id="search" class="search" type="search" placeholder="Search type, maker, grade…" />
+      <select id="maker">
+        <option value="">All makers</option>
+      </select>
+      <select id="grade">
+        <option value="">All verdicts</option>
+        <option value="bad">Bad</option>
+        <option value="poor">Poor</option>
+        <option value="fair">Fair</option>
+        <option value="okay">Okay</option>
+        <option value="good">Good</option>
+        <option value="great">Great</option>
+      </select>
+    </div>
+
+    <p class="note" style="margin-top:0">Compare two PA chains. Open a card to fly that type.</p>
+    <div class="compare">
+      <div>
+        <label for="left">Left</label>
+        <select id="left"></select>
+        <aside id="left-card" class="dossier"></aside>
+      </div>
+      <div>
+        <label for="right">Right</label>
+        <select id="right"></select>
+        <aside id="right-card" class="dossier"></aside>
+      </div>
+    </div>
+
+    <div id="cards" class="cards"></div>
+  </main>
+</body>
+</html>
